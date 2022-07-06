@@ -17,7 +17,7 @@
 # pylint: enable=line-too-long
 # pylint: disable=g-import-not-at-top,g-bad-import-order,wrong-import-position
 
-__version__ = "2.2.3.dev0"
+__version__ = "2.3.3.dev0"
 
 import pyarrow
 from packaging import version
@@ -34,10 +34,10 @@ SCRIPTS_VERSION = "master" if version.parse(__version__).is_devrelease else __ve
 del pyarrow
 del version
 
-from .arrow_dataset import Dataset, concatenate_datasets
+from .arrow_dataset import Dataset
 from .arrow_reader import ReadInstruction
 from .builder import ArrowBasedBuilder, BeamBasedBuilder, BuilderConfig, DatasetBuilder, GeneratorBasedBuilder
-from .combine import interleave_datasets
+from .combine import concatenate_datasets, interleave_datasets
 from .dataset_dict import DatasetDict, IterableDatasetDict
 from .download import *
 from .features import *
@@ -70,3 +70,19 @@ from .splits import (
 from .tasks import *
 from .utils import *
 from .utils import logging
+
+
+# deprecated modules
+from datasets import arrow_dataset as _arrow_dataset  # isort:skip
+from datasets import utils as _utils  # isort:skip
+from datasets.utils import download_manager as _deprecated_download_manager  # isort:skip
+
+_arrow_dataset.concatenate_datasets = concatenate_datasets
+_utils.DownloadConfig = DownloadConfig
+_utils.DownloadManager = DownloadManager
+_utils.DownloadMode = DownloadMode
+_deprecated_download_manager.DownloadConfig = DownloadConfig
+_deprecated_download_manager.DownloadMode = DownloadMode
+_deprecated_download_manager.DownloadManager = DownloadManager
+
+del _arrow_dataset, _utils, _deprecated_download_manager

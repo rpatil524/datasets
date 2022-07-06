@@ -1,3 +1,4 @@
+import itertools
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -35,11 +36,15 @@ class Parquet(datasets.ArrowBasedBuilder):
             files = data_files
             if isinstance(files, str):
                 files = [files]
+            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
+            files = [dl_manager.iter_files(file) for file in files]
             return [datasets.SplitGenerator(name=datasets.Split.TRAIN, gen_kwargs={"files": files})]
         splits = []
         for split_name, files in data_files.items():
             if isinstance(files, str):
                 files = [files]
+            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
+            files = [dl_manager.iter_files(file) for file in files]
             splits.append(datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files}))
         return splits
 
@@ -57,7 +62,7 @@ class Parquet(datasets.ArrowBasedBuilder):
                 raise ValueError(
                     f"Tried to load parquet data with columns '{self.config.columns}' with mismatching features '{self.config.features}'"
                 )
-        for file_idx, file in enumerate(files):
+        for file_idx, file in enumerate(itertools.chain.from_iterable(files)):
             with open(file, "rb") as f:
                 parquet_file = pq.ParquetFile(f)
                 try:

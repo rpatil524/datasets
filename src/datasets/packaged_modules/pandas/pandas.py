@@ -1,3 +1,4 @@
+import itertools
 from dataclasses import dataclass
 from typing import Optional
 
@@ -30,11 +31,15 @@ class Pandas(datasets.ArrowBasedBuilder):
             files = data_files
             if isinstance(files, str):
                 files = [files]
+            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
+            files = [dl_manager.iter_files(file) for file in files]
             return [datasets.SplitGenerator(name=datasets.Split.TRAIN, gen_kwargs={"files": files})]
         splits = []
         for split_name, files in data_files.items():
             if isinstance(files, str):
                 files = [files]
+            # Use `dl_manager.iter_files` to skip hidden files in an extracted archive
+            files = [dl_manager.iter_files(file) for file in files]
             splits.append(datasets.SplitGenerator(name=split_name, gen_kwargs={"files": files}))
         return splits
 
@@ -46,7 +51,7 @@ class Pandas(datasets.ArrowBasedBuilder):
         return pa_table
 
     def _generate_tables(self, files):
-        for i, file in enumerate(files):
+        for i, file in enumerate(itertools.chain.from_iterable(files)):
             with open(file, "rb") as f:
                 pa_table = pa.Table.from_pandas(pd.read_pickle(f))
                 yield i, self._cast_table(pa_table)

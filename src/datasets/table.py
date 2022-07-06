@@ -1232,6 +1232,9 @@ class ConcatenationTable(Table):
     The first axis concatenates the tables along the axis 0 (it appends rows),
     while the second axis concatenates tables along the axis 1 (it appends columns).
 
+    If some columns are missing when concatenating on axis 0, they are filled with null values.
+    This is done using `pyarrow.concat_tables(tables, promote=True)`.
+
     You can access the fully combined table by accessing the ConcatenationTable.table attribute,
     and the blocks by accessing the ConcatenationTable.blocks attribute.
     """
@@ -1261,6 +1264,7 @@ class ConcatenationTable(Table):
     def _concat_blocks(blocks: List[Union[TableBlock, pa.Table]], axis: int = 0) -> pa.Table:
         pa_tables = [table.table if hasattr(table, "table") else table for table in blocks]
         if axis == 0:
+            # we set promote=True to fill missing columns with null values
             return pa.concat_tables(pa_tables, promote=True)
         elif axis == 1:
             for i, table in enumerate(pa_tables):
@@ -1749,6 +1753,8 @@ def array_cast(array: pa.Array, pa_type: pa.DataType, allow_number_to_str=True):
             raise TypeError(
                 f"Couldn't cast array of type {array.type} to {pa_type} since allow_number_to_str is set to {allow_number_to_str}"
             )
+        if pa.types.is_null(pa_type) and not pa.types.is_null(array.type):
+            raise TypeError(f"Couldn't cast array of type {array.type} to {pa_type}")
         return array.cast(pa_type)
     raise TypeError(f"Couldn't cast array of type\n{array.type}\nto\n{pa_type}")
 
